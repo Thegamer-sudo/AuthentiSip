@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AuthentiSip Verify</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@400;500;600&display=swap");
+      :root {
+        --bg: #0c0f14;
+        --card: #141923;
+        --text: #f6f3ee;
+        --muted: #a9b1c2;
+        --gold: #caa658;
+        --gold-soft: rgba(202, 166, 88, 0.14);
+        --ok: #38c172;
+        --bad: #ef4444;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Space Grotesk", sans-serif;
+        background: radial-gradient(circle at 15% 15%, #1b2231 0%, var(--bg) 55%, #06070b 100%);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      .wrap {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 28px 18px 48px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .brand-copy {
+        text-align: center;
+        flex: 1;
+      }
+      .brand h1 {
+        font-family: "Playfair Display", serif;
+        font-size: clamp(2rem, 5vw, 2.5rem);
+        margin: 0;
+        letter-spacing: 0.6px;
+      }
+      .tagline {
+        color: var(--muted);
+        margin-top: 8px;
+      }
+      .admin-link {
+        color: var(--gold);
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .scanner-card {
+        background: linear-gradient(160deg, rgba(30, 37, 50, 0.9) 0%, rgba(14, 17, 24, 0.97) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 20px;
+        padding: 22px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+        text-align: center;
+      }
+      .intro {
+        max-width: 460px;
+        margin: 0 auto;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .scanner-shell {
+        margin: 22px auto 0;
+        max-width: 380px;
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        position: relative;
+      }
+      #reader {
+        width: 100%;
+        min-height: 280px;
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .placeholder {
+        min-height: 280px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .scan-overlay {
+        position: absolute;
+        inset: 14px;
+        border-radius: 14px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 120ms ease;
+      }
+      .scan-overlay.active {
+        opacity: 1;
+      }
+      .scan-frame {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: min(280px, calc(100% - 28px));
+        height: 170px;
+        transform: translate(-50%, -50%);
+        border: 3px solid rgba(255, 255, 255, 0.82);
+        border-radius: 18px;
+        box-shadow: 0 0 0 999px rgba(7, 10, 16, 0.26);
+      }
+      .scan-line {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: min(252px, calc(100% - 56px));
+        height: 4px;
+        transform: translateX(-50%);
+        background: linear-gradient(90deg, rgba(34, 197, 94, 0), rgba(34, 197, 94, 0.95), rgba(34, 197, 94, 0));
+        box-shadow: 0 0 16px rgba(34, 197, 94, 0.95);
+        animation: scan-move 1.6s linear infinite;
+      }
+      .scan-overlay.capture .scan-frame {
+        border-color: rgba(56, 193, 114, 0.98);
+        box-shadow: 0 0 0 999px rgba(18, 41, 24, 0.18), 0 0 26px rgba(56, 193, 114, 0.95);
+      }
+      .scan-overlay.capture .scan-line {
+        background: linear-gradient(90deg, rgba(56, 193, 114, 0), rgba(56, 193, 114, 1), rgba(56, 193, 114, 0));
+      }
+      @keyframes scan-move {
+        0% { margin-top: -82px; }
+        50% { margin-top: 0; }
+        100% { margin-top: 82px; }
+      }
+      .actions {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      button {
+        background: var(--gold);
+        color: #241a07;
+        border: none;
+        padding: 11px 18px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      button[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .result {
+        margin: 18px auto 0;
+        max-width: 420px;
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        text-align: center;
+      }
+      .result.ok {
+        background: rgba(56, 193, 114, 0.12);
+        border-color: rgba(56, 193, 114, 0.35);
+      }
+      .result.bad {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.35);
+      }
+      .status {
+        font-size: 24px;
+        font-weight: 600;
+        margin: 0 0 8px;
+      }
+      .status.ok { color: var(--ok); }
+      .status.bad { color: var(--bad); }
+      .kv {
+        color: var(--muted);
+        margin: 4px 0;
+      }
+      @media (max-width: 640px) {
+        .brand {
+          flex-direction: column;
+        }
+        .brand-copy {
+          order: 1;
+        }
+        .admin-link {
+          order: 2;
+        }
+        .scanner-card {
+          padding: 18px 14px;
+        }
+        .scanner-shell {
+          padding: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brand">
+        <div class="brand-copy">
+          <h1>AuthentiSip Verify</h1>
+          <div class="tagline">Scan a bottle and confirm authenticity in seconds.</div>
+        </div>
+        <a class="admin-link" href="/admin">Admin Ledger</a>
+      </div>
+
+      <div class="scanner-card">
+        <div class="intro">
+          Tap scan, point the camera at the barcode, and we will check the product in the ledger.
+        </div>
+
+        <div class="scanner-shell">
+          <div id="reader">
+            <div id="scanner-placeholder" class="placeholder">
+              Tap "Scan" to start scanning.
+            </div>
+          </div>
+          <div id="scan-overlay" class="scan-overlay">
+            <div class="scan-frame"></div>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="scan-button">Scan</button>
+          <button id="scan-again" class="secondary" disabled>Scan Again</button>
+          <button id="report-btn" class="secondary" disabled>Report This Product</button>
+        </div>
+
+        <div id="result" class="result">
+          <div class="status">Ready to scan</div>
+          <div class="kv">Your scan result will appear here.</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const readerEl = document.getElementById("reader");
+      const resultEl = document.getElementById("result");
+      const reportBtn = document.getElementById("report-btn");
+      const scanAgainBtn = document.getElementById("scan-again");
+      const scanButton = document.getElementById("scan-button");
+      const scanOverlayEl = document.getElementById("scan-overlay");
+      let lastProductId = null;
+      let scannerStarted = false;
+      let html5QrCode = null;
+      let scanLocked = false;
+      let captureFlashTimeout = null;
+
+      function showScannerPlaceholder(message) {
+        readerEl.innerHTML = `
+          <div class="placeholder">
+            ${message}
+          </div>
+        `;
+        scanOverlayEl.className = "scan-overlay";
+      }
+
+      function extractProductId(text) {
+        if (!text) return null;
+        try {
+          const url = new URL(text);
+          const pid = url.searchParams.get("product_id");
+          if (pid) return pid.trim();
+          const parts = url.pathname.split("/").filter(Boolean);
+          if (parts.length) return parts[parts.length - 1].trim();
+        } catch (err) {}
+        if (text.includes("product_id=")) {
+          const match = text.split("product_id=")[1];
+          if (match) return match.split("&")[0].trim();
+        }
+        return text.trim();
+      }
+
+      function showResult(status, details, ok) {
+        const cls = ok ? "ok" : "bad";
+        resultEl.className = `result ${cls}`;
+        resultEl.innerHTML = `
+          <div class="status ${cls}">${status}</div>
+          ${details || ""}
+        `;
+      }
+
+      async function verifyProduct(productId) {
+        const res = await fetch("/verify_product", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id: productId })
+        });
+        if (!res.ok) {
+          throw new Error("Verification request failed");
+        }
+        const data = await res.json();
+
+        lastProductId = null;
+
+        if (data.status === "Authentic") {
+          showResult(
+            "Authentic",
+            `<div class="kv">Product ID: ${data.product.id}</div>
+             <div class="kv">Name: ${data.product.name}</div>
+             <div class="kv">Batch: ${data.product.batch_id}</div>`,
+            true
+          );
+          reportBtn.disabled = true;
+          return;
+        }
+
+        showResult(
+          "Possible Fake Product",
+          `<div class="kv">This product could not be verified.</div>
+           <div class="kv">Please report this product for review.</div>`,
+          false
+        );
+        lastProductId = productId;
+        reportBtn.disabled = false;
+      }
+
+      function showScanOverlay(isActive) {
+        scanOverlayEl.className = isActive ? "scan-overlay active" : "scan-overlay";
+      }
+
+      function flashCapture() {
+        if (captureFlashTimeout) {
+          clearTimeout(captureFlashTimeout);
+        }
+        scanOverlayEl.className = "scan-overlay active capture";
+        captureFlashTimeout = setTimeout(() => {
+          scanOverlayEl.className = "scan-overlay";
+        }, 650);
+      }
+
+      async function stopCamera(message) {
+        if (!scannerStarted || !html5QrCode) {
+          showScannerPlaceholder(message || 'Tap "Scan" to start scanning.');
+          return;
+        }
+
+        try {
+          await html5QrCode.stop();
+          await html5QrCode.clear();
+        } catch (err) {}
+
+        html5QrCode = null;
+        scannerStarted = false;
+        scanButton.disabled = false;
+        showScannerPlaceholder(message || 'Tap "Scan" to start scanning.');
+      }
+
+      async function onScanSuccess(decodedText) {
+        if (scanLocked) return;
+        const pid = extractProductId(decodedText);
+        if (!pid) return;
+        scanLocked = true;
+        flashCapture();
+        resultEl.className = "result";
+        resultEl.innerHTML = `<div class="status">Code detected...</div><div class="kv">Checking the ledger now.</div>`;
+        scanAgainBtn.disabled = false;
+        await stopCamera('Scan complete. Tap "Scan Again" to check another product.');
+        verifyProduct(pid).catch(() => {
+          showResult("Application Failed", "<div class=\"kv\">We could not verify this product right now.</div>", false);
+        });
+      }
+
+      function startScan() {
+        if (scannerStarted) return;
+        scannerStarted = true;
+        scanLocked = false;
+        scanButton.disabled = true;
+        readerEl.innerHTML = "";
+        showScanOverlay(true);
+        resultEl.className = "result";
+        resultEl.innerHTML = `
+          <div class="status">Scanning...</div>
+          <div class="kv">Align the full barcode inside the frame.</div>
+        `;
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 24,
+            qrbox: { width: 280, height: 170 },
+            aspectRatio: 1.7777778,
+            disableFlip: false,
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.CODE_128,
+              Html5QrcodeSupportedFormats.CODE_39,
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E,
+              Html5QrcodeSupportedFormats.QR_CODE
+            ]
+          },
+          onScanSuccess
+        ).catch(() => {
+          scanButton.disabled = false;
+          scannerStarted = false;
+          showScannerPlaceholder('Camera failed to open. Tap "Scan" to try again.');
+          showResult("Application Failed", "<div class=\"kv\">We could not start the scanner on this device.</div>", false);
+        });
+      }
+
+      scanButton.addEventListener("click", startScan);
+
+      scanAgainBtn.addEventListener("click", () => {
+        lastProductId = null;
+        reportBtn.disabled = true;
+        scanAgainBtn.disabled = true;
+        scanLocked = false;
+        resultEl.className = "result";
+        resultEl.innerHTML = `
+          <div class="status">Ready to scan</div>
+          <div class="kv">Your scan result will appear here.</div>
+        `;
+        stopCamera('Tap "Scan" to start scanning.');
+        startScan();
+      });
+
+      reportBtn.addEventListener("click", async () => {
+        if (!lastProductId) return;
+        reportBtn.disabled = true;
+        const res = await fetch("/report_product", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id: lastProductId })
+        });
+        const data = await res.json();
+        if (data.status === "reported") {
+          showResult("Reported", "<div class=\"kv\">Thank you. This item has been flagged.</div>", false);
+        }
+      });
+    </script>
+  </body>
+</html>

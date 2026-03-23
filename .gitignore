@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+
+AuthentiSip/ledger.db
+AuthentiSip/static/qrcodes/
