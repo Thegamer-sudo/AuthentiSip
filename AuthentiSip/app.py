@@ -271,6 +271,99 @@ def stats():
     )
 
 
+@app.route("/admin/insights", methods=["GET"])
+def admin_insights():
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT COUNT(*) FROM products")
+    product_count = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM scans")
+    scan_count = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM scans WHERE result = 'Fake'")
+    fake_scan_count = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM reports")
+    report_count = cur.fetchone()[0]
+
+    cur.execute("SELECT created_at FROM reports ORDER BY created_at DESC LIMIT 1")
+    last_report = cur.fetchone()
+
+    cur.execute(
+        """
+        SELECT r.product_id, r.ip, r.note, r.created_at
+        FROM reports r
+        ORDER BY r.created_at DESC
+        LIMIT 10
+        """
+    )
+    recent_reports = [dict(row) for row in cur.fetchall()]
+
+    cur.execute(
+        """
+        SELECT ip, COUNT(*) AS report_count, MAX(created_at) AS last_report_at
+        FROM reports
+        GROUP BY ip
+        ORDER BY report_count DESC, last_report_at DESC
+        LIMIT 5
+        """
+    )
+    report_hotspots = [dict(row) for row in cur.fetchall()]
+
+    cur.execute(
+        """
+        SELECT ip, COUNT(*) AS fake_count, MAX(created_at) AS last_fake_at
+        FROM scans
+        WHERE result = 'Fake'
+        GROUP BY ip
+        ORDER BY fake_count DESC, last_fake_at DESC
+        LIMIT 5
+        """
+    )
+    fake_scan_hotspots = [dict(row) for row in cur.fetchall()]
+
+    cur.execute(
+        """
+        SELECT id, name, batch_id, created_at
+        FROM products
+        ORDER BY created_at DESC
+        LIMIT 8
+        """
+    )
+    recent_products = [dict(row) for row in cur.fetchall()]
+
+    conn.close()
+
+    return jsonify(
+        {
+            "summary": {
+                "product_count": product_count,
+                "scan_count": scan_count,
+                "fake_scan_count": fake_scan_count,
+                "report_count": report_count,
+                "last_report_at": last_report[0] if last_report else None,
+            },
+            "recent_reports": recent_reports,
+            "report_hotspots": report_hotspots,
+            "fake_scan_hotspots": fake_scan_hotspots,
+            "recent_products": recent_products,
+        }
+    )
+
+
+@app.route("/admin/reset_logs", methods=["POST"])
+def admin_reset_logs():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM scans")
+    cur.execute("DELETE FROM reports")
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "reset"})
+
+
 @app.route("/report_product", methods=["POST"])
 def report_product():
     data = parse_payload()

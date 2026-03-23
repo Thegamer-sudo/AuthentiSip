@@ -8,12 +8,12 @@
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@400;500;600&display=swap");
       :root {
-        --bg: #0c0f14;
-        --card: #141923;
-        --text: #f6f3ee;
-        --muted: #a9b1c2;
-        --gold: #caa658;
-        --gold-soft: rgba(202, 166, 88, 0.14);
+        --bg: #f2ece1;
+        --card: rgba(255, 255, 255, 0.92);
+        --text: #211c16;
+        --muted: #726658;
+        --gold: #a4491c;
+        --gold-soft: rgba(164, 73, 28, 0.12);
         --ok: #38c172;
         --bad: #ef4444;
       }
@@ -21,9 +21,56 @@
       body {
         margin: 0;
         font-family: "Space Grotesk", sans-serif;
-        background: radial-gradient(circle at 15% 15%, #1b2231 0%, var(--bg) 55%, #06070b 100%);
+        background:
+          radial-gradient(circle at top left, rgba(255,255,255,0.92), transparent 30%),
+          radial-gradient(circle at bottom right, rgba(215,168,126,0.18), transparent 32%),
+          linear-gradient(180deg, #fbf8f1 0%, var(--bg) 100%);
         color: var(--text);
         min-height: 100vh;
+      }
+      body.loading {
+        overflow: hidden;
+      }
+      .page-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(circle at top left, rgba(255,255,255,0.96), transparent 30%),
+          radial-gradient(circle at bottom right, rgba(215,168,126,0.18), transparent 32%),
+          linear-gradient(180deg, #fbf8f1 0%, var(--bg) 100%);
+        transition: opacity 260ms ease, visibility 260ms ease;
+      }
+      .page-loader.hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+      .loader-card {
+        text-align: center;
+        padding: 28px 24px;
+      }
+      .loader-ring {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 18px;
+        border-radius: 999px;
+        border: 4px solid rgba(120, 87, 58, 0.12);
+        border-top-color: var(--ok);
+        animation: spin 0.9s linear infinite;
+      }
+      .loader-title {
+        font-family: "Playfair Display", serif;
+        font-size: 28px;
+        margin-bottom: 8px;
+      }
+      .loader-copy {
+        color: var(--muted);
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
       }
       .wrap {
         max-width: 760px;
@@ -57,11 +104,11 @@
         white-space: nowrap;
       }
       .scanner-card {
-        background: linear-gradient(160deg, rgba(30, 37, 50, 0.9) 0%, rgba(14, 17, 24, 0.97) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,240,229,0.95));
+        border: 1px solid rgba(120, 87, 58, 0.14);
         border-radius: 20px;
         padding: 22px;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 18px 38px rgba(64, 39, 14, 0.1);
         text-align: center;
       }
       .intro {
@@ -75,8 +122,8 @@
         max-width: 380px;
         padding: 14px;
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, #fffdf8, #f8f0e5);
+        border: 1px solid #eadfce;
         position: relative;
       }
       #reader {
@@ -92,7 +139,7 @@
         justify-content: center;
         padding: 24px;
         border-radius: 14px;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,236,223,0.92));
         color: var(--muted);
         line-height: 1.5;
       }
@@ -114,9 +161,9 @@
         width: min(280px, calc(100% - 28px));
         height: 170px;
         transform: translate(-50%, -50%);
-        border: 3px solid rgba(255, 255, 255, 0.82);
+        border: 3px solid rgba(164, 73, 28, 0.42);
         border-radius: 18px;
-        box-shadow: 0 0 0 999px rgba(7, 10, 16, 0.26);
+        box-shadow: 0 0 0 999px rgba(64, 39, 14, 0.08);
       }
       .scan-line {
         position: absolute;
@@ -150,7 +197,7 @@
       }
       button {
         background: var(--gold);
-        color: #241a07;
+        color: #fff;
         border: none;
         padding: 11px 18px;
         border-radius: 10px;
@@ -159,8 +206,8 @@
       }
       button.secondary {
         background: transparent;
-        color: var(--text);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: var(--gold);
+        border: 1px solid rgba(164, 73, 28, 0.26);
       }
       button[disabled] {
         opacity: 0.5;
@@ -171,8 +218,8 @@
         max-width: 420px;
         padding: 16px;
         border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(120, 87, 58, 0.14);
+        background: rgba(255,255,255,0.72);
         text-align: center;
       }
       .result.ok {
@@ -213,7 +260,14 @@
       }
     </style>
   </head>
-  <body>
+  <body class="loading">
+    <div id="page-loader" class="page-loader">
+      <div class="loader-card">
+        <div class="loader-ring"></div>
+        <div class="loader-title">AuthentiSip Verify</div>
+        <div class="loader-copy">Preparing secure scan...</div>
+      </div>
+    </div>
     <div class="wrap">
       <div class="brand">
         <div class="brand-copy">
@@ -265,6 +319,12 @@
       let html5QrCode = null;
       let scanLocked = false;
       let captureFlashTimeout = null;
+
+      window.addEventListener("load", () => {
+        const loader = document.getElementById("page-loader");
+        loader.className = "page-loader hidden";
+        document.body.classList.remove("loading");
+      });
 
       function showScannerPlaceholder(message) {
         readerEl.innerHTML = `
